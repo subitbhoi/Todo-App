@@ -62,9 +62,13 @@ body {
 .task-item {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    /* justify-content: space-between; */
     padding: 0.75rem 0.5rem;
     border-bottom: 1px solid #e0e3eb;
+}
+
+.task-item input[type="checkbox"] {
+    margin: 0;
 }
 
 .task-text {
@@ -87,4 +91,11 @@ body {
 
 .task-delete:hover {
     color: #d93025;
+}
+
+.task-left {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex: 1;
 }
