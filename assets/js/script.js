@@ -1,3 +1,7 @@
+// ⚠️ EXPERIMENTAL BRANCH
+// Swipe gesture exploration (touch + mouse)
+// Not merged into main due to UX/accessibility complexity
+
 const taskInput = document.getElementById("taskInput");
 const addTaskBtn = document.getElementById("addTaskBtn");
 const taskList = document.getElementById("taskList");
