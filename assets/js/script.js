@@ -5,6 +5,9 @@ const taskList = document.getElementById("taskList");
 
 let tasks = [];
 let editingIndex = null;
+let startX = 0;
+let currentX = 0;
+let isSwiping = false;
 
 addTaskBtn.addEventListener("click", addTask);
 taskInput.addEventListener("keydown", function (event) {
@@ -22,7 +25,8 @@ function addTask() {
 
     tasks.push({
         text: taskText,
-        completed: false
+        completed: false,
+        archived: false
     });
     taskInput.value = "";
     saveTasks();
@@ -40,24 +44,13 @@ function renderTasks() {
   taskList.innerHTML = "";
 
   tasks.forEach(function (task, index) {
+    if (task.archived) return;
+     
     const li = document.createElement("li");
     li.className = "task-item";
 
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.checked = task.completed;
-
-    checkbox.addEventListener("change", function (event) {
-      event.stopPropagation();
-      tasks[index].completed = checkbox.checked;
-      saveTasks();
-      renderTasks();
-    });
-
     const leftGroup = document.createElement("div");
     leftGroup.className = "task-left";
-
-    leftGroup.appendChild(checkbox);
 
     li.addEventListener("dblclick", function () {
         startEditTask(index);
@@ -98,26 +91,33 @@ function renderTasks() {
 
       leftGroup.appendChild(span);
     }
-    li.appendChild(leftGroup);
 
     if (task.completed) {
       li.classList.add("completed");
     }
+    if (task.completed) {
+  li.classList.add("completed");
+}
 
-    const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "✕";
-    deleteBtn.className = "task-delete";
-    deleteBtn.setAttribute("aria-label", "Delete task");
+const taskContent = document.createElement("div");
+taskContent.className = "task-content";
+taskContent.dataset.index = index;
+taskContent.addEventListener("touchstart", onSwipeStart, { passive: true });
+taskContent.addEventListener("mousedown", onSwipeStart);
 
-    deleteBtn.addEventListener("click", function (event) {
-      event.stopPropagation();
-      tasks.splice(index, 1);
-      saveTasks();
-      renderTasks();
-    });
+taskContent.appendChild(leftGroup);
 
-    li.appendChild(deleteBtn);
-    taskList.appendChild(li);
+const completeAction = document.createElement("div");
+completeAction.className = "swipe-actions swipe-right";
+completeAction.textContent = "Complete";
+
+const archiveAction = document.createElement("div");
+archiveAction.className = "swipe-actions swipe-left";
+archiveAction.textContent = "Archive";
+
+li.appendChild(completeAction);
+li.appendChild(archiveAction);
+li.appendChild(taskContent);taskList.appendChild(li);
   });
 }
 
@@ -151,3 +151,91 @@ function saveTasks() {
 
 loadTasks();
 renderTasks();
+
+function onSwipeStart(event) {
+    if (event.type === "mousedown") {
+        startX = event.clientX;
+        document.addEventListener("mousemove", onSwipeMove);
+        document.addEventListener("mouseup", onSwipeEnd);
+    } else {
+        startX = event.touches[0].clientX;
+    }
+    isSwiping = true;
+}
+
+function onSwipeMove(event) {
+    if (!isSwiping) return;
+
+    if (event.type === "mousemove") {
+        currentX = event.clientX;
+    } else {
+        currentX = event.touches[0].clientX;
+    }
+
+    const deltaX = currentX - startX;
+
+    const activeTask = event.target.closest(".task-content");
+    if (!activeTask) return;
+
+    activeTask.style.transform = `translateX(${deltaX}px)`;
+}
+
+function onSwipeEnd(event) {
+  isSwiping = false;
+
+  const activeTask = event.target.closest(".task-content");
+  if (!activeTask) return;
+
+  const deltaX = currentX - startX;
+
+  handleSwipeAction(activeTask, deltaX);
+
+  document.removeEventListener("mousemove", onSwipeMove);
+  document.removeEventListener("mouseup", onSwipeEnd);
+}
+
+function handleSwipeAction(taskContent, deltaX) {
+  const REVEAL_THRESHOLD = 60;
+  const ACTION_THRESHOLD = 140;
+
+  const index = Number(taskContent.dataset.index);
+
+  taskContent.style.transition = "transform 0.2s ease";
+
+  if (deltaX > ACTION_THRESHOLD) {
+    // FULL RIGHT → COMPLETE
+    taskContent.style.transform = "translateX(100%)";
+
+    setTimeout(() => {
+      tasks[index].completed = true;
+      saveTasks();
+      renderTasks();
+    }, 200);
+  } 
+  else if (deltaX < -ACTION_THRESHOLD) {
+    // FULL LEFT → ARCHIVE
+    taskContent.style.transform = "translateX(-100%)";
+
+    setTimeout(() => {
+      tasks[index].archived = true;
+      saveTasks();
+      renderTasks();
+    }, 200);
+  } 
+  else if (deltaX > REVEAL_THRESHOLD) {
+    // PARTIAL RIGHT → REVEAL COMPLETE
+    taskContent.style.transform = "translateX(80px)";
+  } 
+  else if (deltaX < -REVEAL_THRESHOLD) {
+    // PARTIAL LEFT → REVEAL ARCHIVE
+    taskContent.style.transform = "translateX(-80px)";
+  } 
+  else {
+    // TOO SMALL → RESET
+    taskContent.style.transform = "translateX(0)";
+  }
+
+  setTimeout(() => {
+    taskContent.style.transition = "";
+  }, 200);
+}
