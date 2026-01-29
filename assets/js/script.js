@@ -68,6 +68,8 @@ function renderTasks() {
       input.type = "text";
       input.value = task.text;
       input.className = "task-edit-input";
+      checkbox.setAttribute("aria-label", "Mark task as completed");
+
 
     input.addEventListener("keydown", function (event) {
       if (event.key === "Enter") {
@@ -85,6 +87,10 @@ function renderTasks() {
 
     leftGroup.appendChild(input);
 
+    setTimeout(() => {
+       input.focus();
+     }, 0);
+
     } else {
       const span = document.createElement("span");
       span.textContent = task.text;
@@ -101,6 +107,7 @@ function renderTasks() {
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "✕";
     deleteBtn.className = "task-delete";
+    deleteBtn.setAttribute("aria-label", "Delete task");
 
     deleteBtn.addEventListener("click", function (event) {
       event.stopPropagation();
