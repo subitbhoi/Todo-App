@@ -25,7 +25,15 @@ function addTask() {
         completed: false
     });
     taskInput.value = "";
+    saveTasks();
     renderTasks();
+}
+
+function loadTasks() {
+  const storedTasks = localStorage.getItem("tasks");
+if (storedTasks) {
+    tasks = JSON.parse(storedTasks);
+  }
 }
 
 function renderTasks() {
@@ -42,6 +50,7 @@ function renderTasks() {
     checkbox.addEventListener("change", function (event) {
       event.stopPropagation();
       tasks[index].completed = checkbox.checked;
+      saveTasks();
       renderTasks();
     });
 
@@ -96,6 +105,7 @@ function renderTasks() {
     deleteBtn.addEventListener("click", function (event) {
       event.stopPropagation();
       tasks.splice(index, 1);
+      saveTasks();
       renderTasks();
     });
 
@@ -119,6 +129,7 @@ function saveEdit(index, newText) {
 
     tasks[index].text = trimmedText;
     editingIndex = null;
+    saveTasks();
     renderTasks();
 }
 
@@ -126,3 +137,10 @@ function cancelEdit() {
     editingIndex = null;
     renderTasks();
 }
+
+function saveTasks() {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+loadTasks();
+renderTasks();
